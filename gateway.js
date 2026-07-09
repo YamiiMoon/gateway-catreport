@@ -140,7 +140,8 @@ app.post('/criar-pagamento', async (req, res) => {
 });
 
 // ========== INICIALIZAÇÃO DO SERVIDOR ==========
-app.listen(PORT, () => {
-  console.log(`🚀 Gateway rodando em http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Gateway rodando na porta ${PORT}`);
+
   logger.info({ status: 'gateway_started', port: PORT });
 });
