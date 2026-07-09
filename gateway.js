@@ -110,71 +110,58 @@ app.post('/process', authenticateToken, (req, res) => {
   });
 });
 // ========== ROTA PARA CRIAR PAGAMENTO PIX ==========
+// ========== ROTA PARA CRIAR PAGAMENTO PIX COM ASAAS ==========
 app.post('/criar-pagamento', async (req, res) => {
   const { valor, produto, emailPagador } = req.body;
 
+  // Se não tiver emailPagador, usa um genérico (o Asaas não exige para Pix)
+  const email = emailPagador || "cliente@email.com";
+
   try {
-    const cobranca = await mp.criarPix({
-      produto: produto,
-      id: `pedido-${Date.now()}`,
-      preco: valor,
-      emailPagador: emailPagador || "cliente@email.com"
+    // 1. CRIA A COBRANÇA NO ASAAS
+    const cobranca = await fetch('https://api.asaas.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'access_token': process.env.ASAAS_API_KEY
+      },
+      body: JSON.stringify({
+        customer: 'cliente_teste',
+        billingType: 'PIX',
+        value: valor,
+        dueDate: new Date().toISOString().split('T')[0],
+        description: produto,
+        externalReference: `pedido-${Date.now()}`
+      })
     });
 
-    if (!cobranca.ok) {
-      console.error("Erro ao criar Pix:", cobranca);
-      return res.status(500).json({ erro: cobranca.mensagem });
-    }
+    const dadosCobranca = await cobranca.json();
 
-    // Pega o ID do pagamento
-    const pagamentoId = cobranca.dados.id;
-
-    // Tenta consultar o pagamento
-    const consulta = await mp.consultarCobranca(pagamentoId);
-
-    if (!consulta.ok) {
-      console.error("Erro ao consultar pagamento:", consulta);
-      return res.status(500).json({ erro: consulta.mensagem });
-    }
-
-    // Log do que veio da consulta (para debug)
-    console.log("Dados da consulta:", JSON.stringify(consulta.dados, null, 2));
-
-    // Extrai os dados do Pix
-    const qrCodeBase64 = consulta.dados.qrCodeBase64 || null;
-    const copiaECola = consulta.dados.copiaECola || null;
-
-    if (!qrCodeBase64 || !copiaECola) {
-      // Se não veio QR Code, tenta extrair de outro lugar
-      const qrCode = consulta.dados.qrCode || null;
-      const copiaCola = consulta.dados.copiaCola || null;
-
-      if (qrCode && copiaCola) {
-        return res.json({
-          qrCode: qrCode,
-          copiaCola: copiaCola,
-          id: pagamentoId
-        });
-      }
-
-      // Se ainda não tem, retorna o ID e avisa
-      return res.json({
-        id: pagamentoId,
-        mensagem: "Pagamento criado. Aguarde o QR Code aparecer.",
-        qrCode: null,
-        copiaCola: null
+    if (!dadosCobranca.id) {
+      console.error('Erro Asaas:', dadosCobranca);
+      return res.status(500).json({
+        erro: dadosCobranca.errors?.[0]?.description || 'Erro ao criar cobrança'
       });
     }
 
-    // Sucesso! Retorna os dados
+    // 2. BUSCA O QR CODE DO PIX
+    const qrResponse = await fetch(`https://api.asaas.com/v3/payments/${dadosCobranca.id}/pixQrCode`, {
+      headers: {
+        'access_token': process.env.ASAAS_API_KEY
+      }
+    });
+
+    const qrData = await qrResponse.json();
+
+    // 3. RETORNA OS DADOS PARA O SITE
     res.json({
-      qrCode: qrCodeBase64,
-      copiaCola: copiaECola,
-      id: pagamentoId
+      qrCode: qrData.payload || qrData.imageBase64 || null,
+      copiaCola: qrData.payload || qrData.qrCode || null,
+      id: dadosCobranca.id
     });
 
   } catch (error) {
-    console.error("ERRO AO CRIAR PIX:", error);
+    console.error('ERRO ASAAS:', error);
     res.status(500).json({ erro: error.message });
   }
 });

@@ -1,0 +1,19 @@
+# Dependências
+node_modules/
+
+# Arquivos de ambiente
+.env
+.asaas.env
+asaas.env
+
+# Arquivos de log
+*.log
+
+# Arquivos de certificado (locais)
+*.pem
+key.pem
+cert.pem
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db

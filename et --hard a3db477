@@ -1,0 +1,18 @@
+[33m88efa69[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m removendo .env do projeto e adicionando ao gitignore
+[33ma34df13[m migrando para Asaas
+[33ma3db477[m[33m ([m[1;31morigin/main[m[33m)[m versao robusta para criar e consultar Pix
+[33mfaf38cb[m adicionando espera para consultar o QR Code
+[33ma756425[m adicionando espera para consultar o QR Code
+[33mfac3a05[m adicionando consulta ao pagamento para obter QR Code
+[33m2827ba5[m corrigindo campo emailPagador
+[33mefeb7c3[m corrigindo campo email na rota criar-pagamento
+[33m9633a5c[m corrigindo campo email na rota criar-pagamento
+[33m6e669c7[m corrigindo campo email na rota criar-pagamento
+[33mae764a8[m corrigindo campo email na rota criar-pagamento
+[33m518cca9[m Corrige trust proxy no Railway
+[33m839314c[m corrigindo campo email para o pagamento
+[33meea5a54[m corrigindo nomes dos campos do pagamento
+[33mff49c0b[m adiciona rota criar-pagamento
+[33mab01a56[m adiciona dependencia mp-facil
+[33m3ad96f7[m adiciona token e webhook do mercado pago
+[33med06884[m primeira versao do gateway
