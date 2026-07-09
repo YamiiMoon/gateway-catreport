@@ -111,15 +111,15 @@ app.post('/process', authenticateToken, (req, res) => {
 });
 // ========== ROTA PARA CRIAR PAGAMENTO PIX ==========
 app.post('/criar-pagamento', async (req, res) => {
-  const { valor, produto, email } = req.body;
+  const { valor, produto, emailPagador } = req.body;
 
   try {
     const cobranca = await mp.criarPix({
-  produto,
-  id: `pedido-${Date.now()}`,
-  preco: valor,
-  emailPagador: email || "cliente@email.com"
-});
+      produto: produto,
+      id: `pedido-${Date.now()}`,
+      preco: valor,
+      emailPagador: emailPagador || "cliente@email.com"
+    });
 
     if (cobranca.ok) {
       res.json({
