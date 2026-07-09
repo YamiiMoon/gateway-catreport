@@ -18,7 +18,7 @@ const mp = new MPFacil({
   apiKey: 'APP_USR-5273242514038984-070905-75205609422dbf60161e0d9242565391-3197875267',  // Cole o token que você copiou
   webhookUrl: 'https://gateway-catreport-production.up.railway.app'  // URL do Railway + /webhook-pagamento
 });
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // ========== CHAVES E CRIPTOGRAFIA ==========
 const SECRET_KEY = crypto.randomBytes(32).toString('hex');
@@ -121,8 +121,13 @@ app.post('/criar-pagamento', async (req, res) => {
       res.status(500).json({ erro: cobranca.mensagem });
     }
   } catch (error) {
-    res.status(500).json({ erro: error.message });
-  }
+  console.error("ERRO AO CRIAR PIX:", error);
+
+  res.status(500).json({
+    erro: error.message,
+    stack: error.stack
+  });
+}
 });
 
 // ========== INICIALIZAÇÃO DO SERVIDOR ==========
