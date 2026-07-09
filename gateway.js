@@ -13,6 +13,15 @@ const app = express();
 app.set('trust proxy', 1);
 // ========== MERCADO PAGO ==========
 const { MPFacil } = require('mp-facil');
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION');
+  console.error(err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION');
+  console.error(err);
+});
 
 const mp = new MPFacil({
   apiKey: 'APP_USR-5273242514038984-070905-75205609422dbf60161e0d9242565391-3197875267',  // Cole o token que você copiou
