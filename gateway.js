@@ -98,6 +98,30 @@ app.post('/process', authenticateToken, (req, res) => {
     encryptedData: encrypted 
   });
 });
+// ========== ROTA PARA CRIAR PAGAMENTO PIX ==========
+app.post('/criar-pagamento', async (req, res) => {
+  const { valor, descricao, emailCliente } = req.body;
+
+  try {
+    const cobranca = await mp.criarPix({
+      produto: descricao,
+      preco: valor,
+      emailPagador: emailCliente
+    });
+
+    if (cobranca.ok) {
+      res.json({
+        qrCodeBase64: cobranca.dados.qrCodeBase64,
+        copiaECola: cobranca.dados.copiaECola,
+        pagamentoId: cobranca.dados.id
+      });
+    } else {
+      res.status(500).json({ erro: cobranca.mensagem });
+    }
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+});
 
 // ========== INICIALIZAÇÃO DO SERVIDOR ==========
 app.listen(PORT, () => {
