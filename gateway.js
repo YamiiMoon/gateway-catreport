@@ -188,6 +188,31 @@ app.post('/criar-pagamento', async (req, res) => {
   }
 });
 
+// ========== WEBHOOK DO ASAAS ==========
+app.post('/webhook', express.json(), async (req, res) => {
+  // Token de autenticação do Asaas (copie o token gerado no Asaas)
+  const ASAAS_WEBHOOK_TOKEN = 'whsec_8u9A_h8mvUdvEJMbhX1q_pSDSeOTfbvXci-VwvYnLJQ'; // <--- COLE O TOKEN AQUI
+
+  // Verifica se o token enviado pelo Asaas é válido
+  const token = req.headers['asaas-webhook-token'] || req.headers['x-asaas-webhook-token'];
+  if (token !== ASAAS_WEBHOOK_TOKEN) {
+    console.warn('⚠️ Token inválido!');
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+
+  const event = req.body;
+  console.log('📩 Webhook recebido:', JSON.stringify(event, null, 2));
+
+  if (event.event === 'PAYMENT_CONFIRMED' || event.event === 'PAYMENT_RECEIVED') {
+    const paymentId = event.payment?.id || event.data?.id;
+    console.log(`✅ Pagamento confirmado! ID: ${paymentId}`);
+    res.status(200).json({ received: true });
+  } else {
+    console.log(`ℹ️ Evento ignorado: ${event.event}`);
+    res.status(200).json({ received: true, ignored: true });
+  }
+});
+
 // ========== INICIALIZAÇÃO DO SERVIDOR ==========
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Gateway rodando na porta ${PORT}`);
