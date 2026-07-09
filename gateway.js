@@ -9,6 +9,13 @@ const winston = require('winston');
 const cors = require('cors');
 
 const app = express();
+// ========== MERCADO PAGO ==========
+const { MPFacil } = require('mp-facil');
+
+const mp = new MPFacil({
+  apiKey: 'APP_USR-5273242514038984-070905-75205609422dbf60161e0d9242565391-3197875267',  // Cole o token que você copiou
+  webhookUrl: 'https://gateway-catreport-production.up.railway.app'  // URL do Railway + /webhook-pagamento
+});
 const PORT = 3000;
 
 // ========== CHAVES E CRIPTOGRAFIA ==========
