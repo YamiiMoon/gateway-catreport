@@ -100,20 +100,20 @@ app.post('/process', authenticateToken, (req, res) => {
 });
 // ========== ROTA PARA CRIAR PAGAMENTO PIX ==========
 app.post('/criar-pagamento', async (req, res) => {
-  const { valor, descricao, emailCliente } = req.body;
+  const { valor, produto, emailCliente } = req.body; 
 
   try {
     const cobranca = await mp.criarPix({
-      produto: descricao,
+      produto: produto,           
       preco: valor,
-      emailPagador: emailCliente
+      email: emailCliente         
     });
 
     if (cobranca.ok) {
       res.json({
-        qrCodeBase64: cobranca.dados.qrCodeBase64,
-        copiaECola: cobranca.dados.copiaECola,
-        pagamentoId: cobranca.dados.id
+        qrCode: cobranca.dados.qr_code_base64,  
+        copiaCola: cobranca.dados.qr_code,      
+        id: cobranca.dados.id
       });
     } else {
       res.status(500).json({ erro: cobranca.mensagem });
