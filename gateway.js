@@ -100,13 +100,13 @@ app.post('/process', authenticateToken, (req, res) => {
 });
 // ========== ROTA PARA CRIAR PAGAMENTO PIX ==========
 app.post('/criar-pagamento', async (req, res) => {
-  const { valor, produto, emailCliente } = req.body; 
+  const { valor, produto, email } = req.body; 
 
   try {
     const cobranca = await mp.criarPix({
       produto: produto,           
       preco: valor,
-      email: emailCliente         
+      email: email        
     });
 
     if (cobranca.ok) {
