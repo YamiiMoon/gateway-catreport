@@ -172,6 +172,8 @@ app.post('/criar-pagamento', async (req, res) => {
         console.error('Erro ao gerar QR Code:', err);
       }
     }
+    console.log('QR Code gerado?', qrCodeImage ? 'Sim' : 'Não');
+    console.log('Primeiros 50 caracteres do QR Code:', qrCodeImage ? qrCodeImage.substring(0, 50) : 'null');
 
     // 5. RETORNA OS DADOS PARA O SITE
     res.json({
