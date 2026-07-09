@@ -1,0 +1,99 @@
+// Projeto Ironclad AG-7742-X - Gateway Segura para Evelyn Reed
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const winston = require('winston');
+const cors = require('cors');
+
+const app = express();
+const PORT = 3000;
+
+// ========== CHAVES E CRIPTOGRAFIA ==========
+const SECRET_KEY = crypto.randomBytes(32).toString('hex');
+const AES_KEY = crypto.randomBytes(32);
+
+// ========== LOGGER ==========
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [new winston.transports.File({ filename: 'ironclad-gateway.log' })]
+});
+
+// ========== MIDDLEWARES ==========
+app.use(cors()); // Permite requisições de qualquer origem
+app.use(helmet());
+app.use(express.json());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100,
+  message: { error: "Taxa excedida - Acesso monitorado pelo Ironclad" }
+});
+app.use(limiter);
+
+// ========== ROTA PRINCIPAL ==========
+app.get('/', (req, res) => {
+  res.send('🚀 Servidor Ironclad rodando! Acesse /login ou /process');
+});
+
+// ========== AUTENTICAÇÃO JWT ==========
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: "Acesso negado - Ironclad Protocol" });
+
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.status(403).json({ error: "Token inválido" });
+    req.user = user;
+    next();
+  });
+};
+
+// ========== CRIPTOGRAFIA AES-256 ==========
+function encrypt(data) {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', AES_KEY, iv);
+  let encrypted = cipher.update(JSON.stringify(data));
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return { iv: iv.toString('hex'), encrypted: encrypted.toString('hex') };
+}
+
+// ========== ROTA DE LOGIN ==========
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = bcrypt.hashSync('senhaSeguraOmega', 10);
+  if (username === 'evelyn.reed' && bcrypt.compareSync(password, hashedPassword)) {
+    const token = jwt.sign({ user: username, clearance: 'Omega' }, SECRET_KEY, { expiresIn: '1h' });
+    logger.info({ action: 'login_success', user: username, timestamp: new Date().toISOString() });
+    res.json({ token });
+  } else {
+    res.status(401).json({ error: "Credenciais inválidas" });
+  }
+});
+
+// ========== ROTA PROTEGIDA (PROCESS) ==========
+app.post('/process', authenticateToken, (req, res) => {
+  const payload = req.body;
+  const encrypted = encrypt(payload);
+  logger.info({ 
+    action: 'process_request', 
+    user: req.user.user, 
+    payloadHash: crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex') 
+  });
+
+  res.json({ 
+    status: "success", 
+    message: "Requisição processada via Ironclad Gateway", 
+    encryptedData: encrypted 
+  });
+});
+
+// ========== INICIALIZAÇÃO DO SERVIDOR ==========
+app.listen(PORT, () => {
+  console.log(`🚀 Gateway rodando em http://localhost:${PORT}`);
+  logger.info({ status: 'gateway_started', port: PORT });
+});
