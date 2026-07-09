@@ -126,19 +126,11 @@ app.post('/criar-pagamento', async (req, res) => {
       return res.status(500).json({ erro: cobranca.mensagem });
     }
 
+    // 2. ESPERA 3 SEGUNDOS PARA O MERCADO PAGO PROCESSAR
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // 3. CONSULTA O PAGAMENTO
     const pagamentoId = cobranca.dados.id;
-
-    // 2. ACOMPANHA O PAGAMENTO ATÉ ELE FICAR PRONTO
-    const resultadoLoop = await mp.acompanharCobranca(pagamentoId, {
-      intervaloMs: 2000,
-      duracaoMs: 30 * 1000 // 30 segundos no máximo
-    });
-
-    if (!resultadoLoop.ok) {
-      return res.status(500).json({ erro: resultadoLoop.mensagem });
-    }
-
-    // 3. CONSULTA O PAGAMENTO JÁ PRONTO
     const consulta = await mp.consultarCobranca(pagamentoId);
 
     if (!consulta.ok) {
