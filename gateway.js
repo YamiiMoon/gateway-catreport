@@ -116,7 +116,7 @@ app.post('/criar-pagamento', async (req, res) => {
   const email = emailPagador || "cliente@email.com";
 
   try {
-    // 1. CRIA A COBRANÇA NO ASAAS (COM CLIENTE NA HORA)
+    // 1. CRIA A COBRANÇA NO ASAAS
     const cobranca = await fetch('https://api.asaas.com/v3/payments', {
       method: 'POST',
       headers: {
@@ -125,10 +125,10 @@ app.post('/criar-pagamento', async (req, res) => {
       },
       body: JSON.stringify({
         customer: {
-        name: "Cliente Teste",
-        email: email,
-        cpfCnpj: "12345678909"   // CPF genérico para testes
-      },
+          name: "Cliente",
+          email: email,
+          cpfCnpj: "12345678909"
+        },
         billingType: 'PIX',
         value: valor,
         dueDate: new Date().toISOString().split('T')[0],
