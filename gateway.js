@@ -7,7 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const winston = require('winston');
 const cors = require('cors');
-
+const QRCode = require('qrcode');
 const app = express();
 
 app.set('trust proxy', 1);
@@ -112,8 +112,13 @@ app.post('/process', authenticateToken, (req, res) => {
 // ========== ROTA PARA CRIAR PAGAMENTO PIX ==========
 // ========== ROTA PARA CRIAR PAGAMENTO PIX COM ASAAS ==========
 app.post('/criar-pagamento', async (req, res) => {
-  const { valor, produto, emailPagador } = req.body;
-  const email = emailPagador || "cliente@email.com";
+  // Agora espera receber nome, email e cpf do frontend
+  const { valor, produto, nome, emailPagador, cpf } = req.body;
+
+  // Dados mínimos para o Asaas (se não vier, usa fallback)
+  const nomeCliente = nome || "Cliente";
+  const emailCliente = emailPagador || "cliente@email.com";
+  const cpfCliente = cpf || "12345678909";
 
   try {
     // 1. CRIA A COBRANÇA NO ASAAS
@@ -125,9 +130,9 @@ app.post('/criar-pagamento', async (req, res) => {
       },
       body: JSON.stringify({
         customer: {
-          name: "Cliente",
-          email: email,
-          cpfCnpj: "12345678909"
+          name: nomeCliente,
+          email: emailCliente,
+          cpfCnpj: cpfCliente
         },
         billingType: 'PIX',
         value: valor,
@@ -155,10 +160,23 @@ app.post('/criar-pagamento', async (req, res) => {
 
     const qrData = await qrResponse.json();
 
-    // 3. RETORNA OS DADOS PARA O SITE
+    // 3. PEGA O CÓDIGO PIX (copia e cola)
+    const codigoPix = qrData.payload || qrData.qrCode || null;
+
+    // 4. GERA A IMAGEM DO QR CODE LOCALMENTE
+    let qrCodeImage = null;
+    if (codigoPix) {
+      try {
+        qrCodeImage = await QRCode.toDataURL(codigoPix);
+      } catch (err) {
+        console.error('Erro ao gerar QR Code:', err);
+      }
+    }
+
+    // 5. RETORNA OS DADOS PARA O SITE
     res.json({
-      qrCode: qrData.payload || qrData.imageBase64 || null,
-      copiaCola: qrData.payload || qrData.qrCode || null,
+      qrCode: qrCodeImage,        // Imagem do QR Code (base64)
+      copiaCola: codigoPix,       // Código Pix copia e cola
       id: dadosCobranca.id
     });
 
