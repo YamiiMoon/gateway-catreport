@@ -115,10 +115,11 @@ app.post('/criar-pagamento', async (req, res) => {
 
   try {
     const cobranca = await mp.criarPix({
-      produto: produto,
-      preco: valor,
-      email: email || 'cliente@email.com'  // fallback para teste
-    });
+  produto,
+  id: `pedido-${Date.now()}`,
+  preco: valor,
+  emailPagador: email || "cliente@email.com"
+});
 
     if (cobranca.ok) {
       res.json({
