@@ -114,6 +114,7 @@ app.post('/criar-pagamento', async (req, res) => {
   const { valor, produto, emailPagador } = req.body;
 
   try {
+    // 1. CRIA O PIX
     const cobranca = await mp.criarPix({
       produto: produto,
       id: `pedido-${Date.now()}`,
@@ -121,23 +122,28 @@ app.post('/criar-pagamento', async (req, res) => {
       emailPagador: emailPagador || "cliente@email.com"
     });
 
-    if (cobranca.ok) {
-      res.json({
-        qrCode: cobranca.dados.qr_code_base64,
-        copiaCola: cobranca.dados.qr_code,
-        id: cobranca.dados.id
-      });
-    } else {
-      res.status(500).json({ erro: cobranca.mensagem });
+    if (!cobranca.ok) {
+      return res.status(500).json({ erro: cobranca.mensagem });
     }
-  } catch (error) {
-  console.error("ERRO AO CRIAR PIX:", error);
 
-  res.status(500).json({
-    erro: error.message,
-    stack: error.stack
-  });
-}
+    // 2. CONSULTA O PAGAMENTO PARA PEGAR O QR CODE
+    const pagamentoId = cobranca.dados.id;
+    const consulta = await mp.consultarCobranca(pagamentoId);
+
+    if (!consulta.ok) {
+      return res.status(500).json({ erro: consulta.mensagem });
+    }
+
+    // 3. RETORNA OS DADOS COMPLETOS PARA O SITE
+    res.json({
+      qrCode: consulta.dados.qrCodeBase64,
+      copiaCola: consulta.dados.copiaECola
+    });
+
+  } catch (error) {
+    console.error("ERRO AO CRIAR PIX:", error);
+    res.status(500).json({ erro: error.message });
+  }
 });
 
 // ========== INICIALIZAÇÃO DO SERVIDOR ==========
