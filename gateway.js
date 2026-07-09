@@ -113,12 +113,10 @@ app.post('/process', authenticateToken, (req, res) => {
 // ========== ROTA PARA CRIAR PAGAMENTO PIX COM ASAAS ==========
 app.post('/criar-pagamento', async (req, res) => {
   const { valor, produto, emailPagador } = req.body;
-
-  // Se não tiver emailPagador, usa um genérico (o Asaas não exige para Pix)
   const email = emailPagador || "cliente@email.com";
 
   try {
-    // 1. CRIA A COBRANÇA NO ASAAS
+    // 1. CRIA A COBRANÇA NO ASAAS (COM CLIENTE NA HORA)
     const cobranca = await fetch('https://api.asaas.com/v3/payments', {
       method: 'POST',
       headers: {
@@ -126,7 +124,10 @@ app.post('/criar-pagamento', async (req, res) => {
         'access_token': process.env.ASAAS_API_KEY
       },
       body: JSON.stringify({
-        customer: 'cliente_teste',
+        customer: {           // <--- MUDOU AQUI: agora é um objeto
+          name: "Cliente Teste",
+          email: email
+        },
         billingType: 'PIX',
         value: valor,
         dueDate: new Date().toISOString().split('T')[0],
