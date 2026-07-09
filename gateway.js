@@ -124,10 +124,11 @@ app.post('/criar-pagamento', async (req, res) => {
         'access_token': process.env.ASAAS_API_KEY
       },
       body: JSON.stringify({
-        customer: {           // <--- MUDOU AQUI: agora é um objeto
-          name: "Cliente Teste",
-          email: email
-        },
+        customer: {
+        name: "Cliente Teste",
+        email: email,
+        cpfCnpj: "12345678909"   // CPF genérico para testes
+      },
         billingType: 'PIX',
         value: valor,
         dueDate: new Date().toISOString().split('T')[0],
