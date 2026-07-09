@@ -9,6 +9,8 @@ const winston = require('winston');
 const cors = require('cors');
 
 const app = express();
+
+app.set('trust proxy', 1);
 // ========== MERCADO PAGO ==========
 const { MPFacil } = require('mp-facil');
 
@@ -100,19 +102,19 @@ app.post('/process', authenticateToken, (req, res) => {
 });
 // ========== ROTA PARA CRIAR PAGAMENTO PIX ==========
 app.post('/criar-pagamento', async (req, res) => {
-  const { valor, produto, email } = req.body; 
+  const { valor, produto, email } = req.body;
 
   try {
     const cobranca = await mp.criarPix({
-      produto: produto,           
+      produto: produto,
       preco: valor,
-      email: email        
+      email: email || 'cliente@email.com'  // fallback para teste
     });
 
     if (cobranca.ok) {
       res.json({
-        qrCode: cobranca.dados.qr_code_base64,  
-        copiaCola: cobranca.dados.qr_code,      
+        qrCode: cobranca.dados.qr_code_base64,
+        copiaCola: cobranca.dados.qr_code,
         id: cobranca.dados.id
       });
     } else {
