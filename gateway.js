@@ -114,7 +114,6 @@ app.post('/criar-pagamento', async (req, res) => {
   const { valor, produto, emailPagador } = req.body;
 
   try {
-    // 1. CRIA O PIX
     const cobranca = await mp.criarPix({
       produto: produto,
       id: `pedido-${Date.now()}`,
@@ -123,24 +122,54 @@ app.post('/criar-pagamento', async (req, res) => {
     });
 
     if (!cobranca.ok) {
+      console.error("Erro ao criar Pix:", cobranca);
       return res.status(500).json({ erro: cobranca.mensagem });
     }
 
-    // 2. ESPERA 3 SEGUNDOS PARA O MERCADO PAGO PROCESSAR
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    // 3. CONSULTA O PAGAMENTO
+    // Pega o ID do pagamento
     const pagamentoId = cobranca.dados.id;
+
+    // Tenta consultar o pagamento
     const consulta = await mp.consultarCobranca(pagamentoId);
 
     if (!consulta.ok) {
+      console.error("Erro ao consultar pagamento:", consulta);
       return res.status(500).json({ erro: consulta.mensagem });
     }
 
-    // 4. RETORNA OS DADOS
+    // Log do que veio da consulta (para debug)
+    console.log("Dados da consulta:", JSON.stringify(consulta.dados, null, 2));
+
+    // Extrai os dados do Pix
+    const qrCodeBase64 = consulta.dados.qrCodeBase64 || null;
+    const copiaECola = consulta.dados.copiaECola || null;
+
+    if (!qrCodeBase64 || !copiaECola) {
+      // Se não veio QR Code, tenta extrair de outro lugar
+      const qrCode = consulta.dados.qrCode || null;
+      const copiaCola = consulta.dados.copiaCola || null;
+
+      if (qrCode && copiaCola) {
+        return res.json({
+          qrCode: qrCode,
+          copiaCola: copiaCola,
+          id: pagamentoId
+        });
+      }
+
+      // Se ainda não tem, retorna o ID e avisa
+      return res.json({
+        id: pagamentoId,
+        mensagem: "Pagamento criado. Aguarde o QR Code aparecer.",
+        qrCode: null,
+        copiaCola: null
+      });
+    }
+
+    // Sucesso! Retorna os dados
     res.json({
-      qrCode: consulta.dados.qrCodeBase64,
-      copiaCola: consulta.dados.copiaECola,
+      qrCode: qrCodeBase64,
+      copiaCola: copiaECola,
       id: pagamentoId
     });
 
