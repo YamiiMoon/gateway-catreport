@@ -188,10 +188,16 @@ app.post('/criar-pagamento', async (req, res) => {
   }
 });
 
+
 // ========== WEBHOOK DO ASAAS ==========
 app.post('/webhook', express.json(), async (req, res) => {
-  // Token de autenticação do Asaas (copie o token gerado no Asaas)
-  const ASAAS_WEBHOOK_TOKEN = 'whsec_8u9A_h8mvUdvEJMbhX1q_pSDSeOTfbvXci-VwvYnLJQ'; // <--- COLE O TOKEN AQUI
+  // Token de autenticação do Asaas
+  const ASAAS_WEBHOOK_TOKEN = 'whsec_8u9A_h8mvUdvEJMbhX1q_pSDSeOTfbvXci-VwvYnLJQ';
+
+  // LOG PARA VER SE A REQUISIÇÃO CHEGA
+  console.log('📩 Requisição recebida no webhook!');
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
 
   // Verifica se o token enviado pelo Asaas é válido
   const token = req.headers['asaas-webhook-token'] || req.headers['x-asaas-webhook-token'];
