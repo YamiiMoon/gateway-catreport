@@ -583,35 +583,110 @@ app.post('/criar-pagamento', limiter, async (req, res) => {
   }
 });
 
-// ========== FUNÇÃO PARA GERAR RELATÓRIO COM IA (VERSÃO REFINADA) ==========
-async function gerarRelatorio(nome, desafio, email) {
+// ========== ROTA PARA RECEBER RESPOSTAS DO FORMULÁRIO ==========
+app.post('/enviar-respostas', async (req, res) => {
   try {
+    const respostas = req.body;
+    const pedidoId = respostas.pedidoId;
+
+    // Busca o pedido no banco
+    const pedido = await buscarPedidoPorId(pedidoId);
+
+    if (!pedido) {
+      return res.status(404).json({ erro: 'Pedido não encontrado' });
+    }
+
+    // Verifica se o pagamento foi confirmado
+    if (pedido.status !== 'PAID') {
+      return res.status(400).json({ erro: 'Pagamento não confirmado ainda.' });
+    }
+
+    // Verifica se o relatório já foi enviado
+    if (pedido.email_sent) {
+      return res.status(400).json({ erro: 'Relatório já enviado para este pedido.' });
+    }
+
+    logger.info(`📧 Gerando relatório para ${pedido.email} com base nas respostas...`);
+
+    // ===== GERA O RELATÓRIO COM IA (usando as respostas) =====
+    const relatorio = await gerarRelatorioComRespostas(pedido.nome, respostas, pedido.email);
+
+    // ===== ENVIA O RELATÓRIO POR E-MAIL =====
+    await enviarRelatorioPorEmail(pedido.email, pedido.nome, relatorio);
+
+    // ===== MARCA COMO ENVIADO =====
+    await marcarEmailEnviado(pedidoId);
+
+    res.json({ success: true, message: 'Relatório enviado com sucesso!' });
+
+  } catch (error) {
+    logger.error('❌ Erro ao processar respostas:', error);
+    res.status(500).json({ erro: error.message });
+  }
+});
+
+// ========== FUNÇÃO PARA GERAR RELATÓRIO COM RESPOSTAS ==========
+async function gerarRelatorioComRespostas(nome, respostas, email) {
+  try {
+    // Formata as respostas de forma legível para o prompt
+    const respostasTexto = `
+      **Dados da Empresa**
+      - Nome da empresa: ${respostas.nomeEmpresa || 'N/A'}
+      - Segmento: ${respostas.segmento || 'N/A'}
+      - Faturamento mensal: R$ ${respostas.faturamento || 'N/A'}
+      - Tempo de existência: ${respostas.tempo || 'N/A'}
+      - Funcionários: ${respostas.funcionarios || 'N/A'}
+
+      **Sobre o Desafio**
+      - Desafio principal: ${respostas.desafio || 'N/A'}
+      - Quando começou: ${respostas.inicioProblema || 'N/A'}
+      - Impacto financeiro: R$ ${respostas.impactoFinanceiro || 'N/A'}
+      - O que já tentou: ${respostas.tentativas || 'N/A'}
+
+      **Clientes e Vendas**
+      - Cliente ideal: ${respostas.clienteIdeal || 'N/A'}
+      - Vendas por mês: ${respostas.vendasMes || 'N/A'}
+      - Taxa de conversão: ${respostas.taxaConversao || 'N/A'}%
+      - Modelo de venda: ${respostas.modeloVenda || 'N/A'}
+
+      **Operação Interna**
+      - Custos: ${respostas.custos || 'N/A'}
+      - Organização da equipe: ${respostas.organizacaoEquipe || 'N/A'}
+      - Ferramentas usadas: ${respostas.ferramentas || 'N/A'}
+
+      **Concorrência e Mercado**
+      - Concorrentes: ${respostas.concorrentes || 'N/A'}
+      - O que eles fazem melhor: ${respostas.concorrentesMelhor || 'N/A'}
+      - Sua vantagem: ${respostas.vantagem || 'N/A'}
+
+      **Metas e Visão**
+      - Meta 6 meses: R$ ${respostas.meta6 || 'N/A'}
+      - Meta 12 meses: R$ ${respostas.meta12 || 'N/A'}
+      - Sucesso em 90 dias: ${respostas.sucesso90 || 'N/A'}
+    `;
+
     const prompt = `
 Você é o Dr. Marcus Vale, consultor de negócios com 15 anos de experiência ajudando PMEs brasileiras a crescerem de forma sustentável.
 Sou direto, prático e não perco tempo com teorias. Se não for para resolver o problema de verdade, não vou sugerir.
 
 Cliente: ${nome}
 E-mail: ${email}
-Desafio principal: ${desafio}
+
+**Respostas do questionário:**
+${respostasTexto}
 
 **Instruções rigorosas:**
-- NÃO use frases genéricas como "é importante" sem explicar o porquê prático.
-- NÃO dê conselhos óbvios sem detalhar o "como fazer".
+- Use as respostas do cliente para criar um relatório ALTAMENTE PERSONALIZADO.
+- NÃO use frases genéricas. Tudo deve ser baseado nas informações fornecidas.
 - Seja extremamente objetivo, use linguagem brasileira direta.
 - Prefira frases curtas e listas.
-- Pense passo a passo antes de responder.
 
 **Estrutura obrigatória do relatório:**
-1. **Resumo Executivo** (máximo 4 frases impactantes)
-2. **Análise do Problema** (exatamente 3 causas raiz mais prováveis)
-3. **Oportunidades de Melhoria** (exatamente 5, priorizadas, com nível de impacto e facilidade de execução)
-4. **Ferramentas Recomendadas** (separe em Gratuitas e Pagas, com link quando possível e justificativa curta)
-5. **Plano de Ação** (detalhado para 30, 60 e 90 dias, com responsáveis sugeridos e métricas claras de sucesso)
-
-**Exemplo de formato:**
-1. **Resumo Executivo**  
-   - Frase 1...  
-   - Frase 2...
+1. **Resumo Executivo** (máximo 4 frases impactantes, baseado nos dados do cliente)
+2. **Análise do Problema** (exatamente 3 causas raiz, baseadas no desafio informado)
+3. **Oportunidades de Melhoria** (exatamente 5, priorizadas, com nível de impacto e facilidade)
+4. **Ferramentas Recomendadas** (separe em Gratuitas e Pagas, com link e justificativa)
+5. **Plano de Ação** (detalhado para 30, 60 e 90 dias, com métricas claras)
 
 Agora gere o relatório completo para este cliente. Seja prático, acionável e vá direto ao ponto.
 `;
@@ -620,7 +695,7 @@ Agora gere o relatório completo para este cliente. Seja prático, acionável e 
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.62,
-      max_tokens: 2500,
+      max_tokens: 3000,
       presence_penalty: 0.15,
       frequency_penalty: 0.15
     });
@@ -638,7 +713,7 @@ Agora gere o relatório completo para este cliente. Seja prático, acionável e 
 async function enviarRelatorioPorEmail(email, nome, relatorio) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'CATreport <naoresponda@catreport.com>', // Substitua pelo seu domínio
+      from: 'CATreport <naoresponda@resend.dev>', // Substitua pelo seu domínio
       to: [email],
       subject: `📊 Seu relatório personalizado - CATreport`,
       html: `
@@ -731,20 +806,8 @@ app.post('/webhook', async (req, res) => {
       const pedidoAtualizado = await atualizarStatusPedido(pedido.id, 'PAID');
 
       if (pedidoAtualizado && !pedido.email_sent) {
-  logger.info(`📧 Gerando relatório para ${pedido.email}...`);
-
-  // ===== GERA O RELATÓRIO COM IA =====
-  const relatorio = await gerarRelatorio(
-    pedido.nome,
-    pedido.desafio || 'Nenhum desafio informado',
-    pedido.email
-  );
-
-  // ===== ENVIA O RELATÓRIO POR E-MAIL =====
-  await enviarRelatorioPorEmail(pedido.email, pedido.nome, relatorio);
-
-  // ===== MARCA COMO ENVIADO =====
-  await marcarEmailEnviado(pedido.id);
+  logger.info(`✅ Pagamento confirmado para ${pedido.email}. Aguardando respostas do questionário.`);
+  // NÃO gera relatório aqui. O relatório será gerado após as perguntas.
 }
     } else {
       logger.info(`ℹ️ Evento ignorado: ${event.event}`);

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CATreport – Diagnóstico Completo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0b0d10;
+      font-family: 'Inter', sans-serif;
+      color: #eaeef2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: #11181f;
+      padding: 3rem 2.5rem;
+      border-radius: 40px;
+      border: 1px solid #1f2a33;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+    .logo {
+      font-size: 2.4rem;
+      font-weight: 800;
+      text-align: center;
+    }
+    .logo span { color: #f5b800; }
+    .tag {
+      text-align: center;
+      background: #1f2a33;
+      padding: 0.3rem 1rem;
+      border-radius: 40px;
+      display: inline-block;
+      font-size: 0.8rem;
+      margin: 0.5rem auto 1.5rem;
+      color: #aab8c5;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.2;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    h1 .destaque { color: #00f5a0; }
+    .sub {
+      text-align: center;
+      color: #aab8c5;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f5b800;
+      margin: 2rem 0 1rem;
+      border-bottom: 1px solid #1f2a33;
+      padding-bottom: 0.5rem;
+    }
+    .section-title i { margin-right: 10px; }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: #c8d4df;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+    }
+    .form-group label .required {
+      color: #f5b800;
+      margin-left: 4px;
+    }
+    .form-group .helper {
+      font-size: 0.8rem;
+      color: #5d6f7d;
+      margin-top: 4px;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 30px;
+      border: 1px solid #1f2a33;
+      background: #0e171f;
+      color: #eaeef2;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.3s;
+      font-family: 'Inter', sans-serif;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: #f5b800;
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+      border-radius: 20px;
+    }
+    .form-group select {
+      appearance: none;
+      cursor: pointer;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .btn {
+      display: block;
+      background: #f5b800;
+      color: #0b0d10;
+      font-weight: 700;
+      padding: 1.2rem;
+      border-radius: 60px;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 1.5rem;
+      transition: 0.3s;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn:hover {
+      background: #d4a000;
+      transform: scale(1.02);
+    }
+    .btn i { margin-right: 10px; }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .status-msg {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      display: none;
+    }
+    .status-msg.success {
+      display: block;
+      background: #0e2a1e;
+      color: #00f5a0;
+      border: 1px solid #00f5a0;
+    }
+    .status-msg.error {
+      display: block;
+      background: #2a0e0e;
+      color: #f55a5a;
+      border: 1px solid #f55a5a;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: #5d6f7d;
+      font-size: 0.8rem;
+      border-top: 1px solid #1f2a33;
+      padding-top: 1.5rem;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #1f2a33;
+      border-radius: 4px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      background: #f5b800;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+    @media (max-width: 500px) {
+      .container { padding: 2rem 1.2rem; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="logo">📊 CAT<span>report</span></div>
+      <div class="tag"><i class="fas fa-pencil-alt"></i> Diagnóstico Completo</div>
+    </div>
+
+    <h1>Conte-nos <span class="destaque">tudo sobre seu negócio</span></h1>
+    <p class="sub">
+      Responda as perguntas abaixo com o máximo de detalhes. Isso vai garantir um relatório altamente personalizado e acionável.
+    </p>
+
+    <div class="progress-bar">
+      <div class="fill" id="progressFill"></div>
+    </div>
+
+    <form id="formPerguntas">
+      <input type="hidden" id="pedidoId" value="" />
+
+      <!-- ===== SEÇÃO 1: DADOS DA EMPRESA ===== -->
+      <div class="section-title"><i class="fas fa-building"></i> 1. Dados da Empresa</div>
+
+      <div class="form-group">
+        <label>Nome completo da empresa <span class="required">*</span></label>
+        <input type="text" id="nomeEmpresa" placeholder="Ex: Minha Loja LTDA" required />
+      </div>
+
+      <div class="form-group">
+        <label>Segmento de atuação <span class="required">*</span></label>
+        <select id="segmento" required>
+          <option value="">Selecione...</option>
+          <option value="comercio">Comércio</option>
+          <option value="servicos">Serviços</option>
+          <option value="industria">Indústria</option>
+          <option value="infoproduto">Infoproduto</option>
+          <option value="tecnologia">Tecnologia</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Faturamento médio mensal (R$) <span class="required">*</span></label>
+          <input type="number" id="faturamento" placeholder="Ex: 15000" required />
+        </div>
+        <div class="form-group">
+          <label>Há quanto tempo a empresa existe? <span class="required">*</span></label>
+          <select id="tempo" required>
+            <option value="">Selecione...</option>
+            <option value="menos1">Menos de 1 ano</option>
+            <option value="1a3">1 a 3 anos</option>
+            <option value="3a5">3 a 5 anos</option>
+            <option value="mais5">Mais de 5 anos</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Quantos funcionários/equipe você tem? <span class="required">*</span></label>
+        <select id="funcionarios" required>
+          <option value="">Selecione...</option>
+          <option value="sozinho">Só eu (MEI)</option>
+          <option value="2a5">2 a 5</option>
+          <option value="6a20">6 a 20</option>
+          <option value="mais20">Mais de 20</option>
+        </select>
+      </div>
+
+      <!-- ===== SEÇÃO 2: DESAFIO PRINCIPAL ===== -->
+      <div class="section-title"><i class="fas fa-exclamation-triangle"></i> 2. Sobre o Desafio Principal</div>
+
+      <div class="form-group">
+        <label>Descreva o desafio atual com o máximo de detalhes <span class="required">*</span></label>
+        <textarea id="desafio" placeholder="Ex: Estou perdendo clientes porque meus preços estão acima da média, mas não consigo reduzir custos..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Quando esse problema começou a aparecer? <span class="required">*</span></label>
+        <input type="text" id="inicioProblema" placeholder="Ex: Começou há 6 meses, depois que um concorrente abriu na mesma rua" required />
+      </div>
+
+      <div class="form-group">
+        <label>Qual o impacto financeiro atual desse problema? (R$/mês) <span class="required">*</span></label>
+        <input type="number" id="impactoFinanceiro" placeholder="Ex: 5000" required />
+        <div class="helper">Quanto você estima que está perdendo por mês por causa desse problema?</div>
+      </div>
+
+      <div class="form-group">
+        <label>O que você já tentou fazer para resolver e qual foi o resultado? <span class="required">*</span></label>
+        <textarea id="tentativas" placeholder="Ex: Tentei baixar os preços, mas o faturamento caiu ainda mais..." required></textarea>
+      </div>
+
+      <!-- ===== SEÇÃO 3: CLIENTES E VENDAS ===== -->
+      <div class="section-title"><i class="fas fa-users"></i> 3. Clientes e Vendas</div>
+
+      <div class="form-group">
+        <label>Qual o perfil do seu cliente ideal? (idade, ticket médio, etc.) <span class="required">*</span></label>
+        <textarea id="clienteIdeal" placeholder="Ex: Mulheres entre 25-40 anos, ticket médio R$ 150, buscam produtos premium..." required></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quantas vendas você faz por mês? <span class="required">*</span></label>
+          <input type="number" id="vendasMes" placeholder="Ex: 50" required />
+        </div>
+        <div class="form-group">
+          <label>Qual sua taxa de conversão? (%) <span class="required">*</span></label>
+          <input type="number" id="taxaConversao" placeholder="Ex: 15" required />
+          <div class="helper">Quantos visitantes se tornam clientes?</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Seu modelo de venda é:</label>
+        <select id="modeloVenda">
+          <option value="unica">Venda única</option>
+          <option value="recorrente">Recorrente (assinatura)</option>
+          <option value="ambos">Ambos</option>
+        </select>
+      </div>
+
+      <!-- ===== SEÇÃO 4: OPERAÇÃO INTERNA ===== -->
+      <div class="section-title"><i class="fas fa-cogs"></i> 4. Operação Interna</div>
+
+      <div class="form-group">
+        <label>Quais são os principais custos fixos e variáveis? <span class="required">*</span></label>
+        <textarea id="custos" placeholder="Ex: Aluguel R$ 2.000, folha R$ 5.000, matéria-prima R$ 3.000/mês..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Como está organizada a equipe? (quem faz o que) <span class="required">*</span></label>
+        <textarea id="organizacaoEquipe" placeholder="Ex: Eu cuido de vendas, minha sócia da operação, temos uma auxiliar administrativa..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Quais ferramentas ou sistemas você usa atualmente?</label>
+        <input type="text" id="ferramentas" placeholder="Ex: WhatsApp, Excel, ERP da ContaAzul, etc." />
+      </div>
+
+      <!-- ===== SEÇÃO 5: CONCORRÊNCIA E MERCADO ===== -->
+      <div class="section-title"><i class="fas fa-chart-line"></i> 5. Concorrência e Mercado</div>
+
+      <div class="form-group">
+        <label>Quem são seus 3 principais concorrentes? <span class="required">*</span></label>
+        <textarea id="concorrentes" placeholder="Ex: Loja X, Empresa Y, Site Z..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>O que eles fazem melhor que você? <span class="required">*</span></label>
+        <textarea id="concorrentesMelhor" placeholder="Ex: Têm um site mais completo, fazem entregas mais rápidas..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Qual sua maior vantagem competitiva hoje? <span class="required">*</span></label>
+        <textarea id="vantagem" placeholder="Ex: Atendimento personalizado, produto de maior qualidade..." required></textarea>
+      </div>
+
+      <!-- ===== SEÇÃO 6: METAS E VISÃO ===== -->
+      <div class="section-title"><i class="fas fa-flag-checkered"></i> 6. Metas e Visão</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Meta de faturamento para 6 meses (R$) <span class="required">*</span></label>
+          <input type="number" id="meta6" placeholder="Ex: 100000" required />
+        </div>
+        <div class="form-group">
+          <label>Meta de faturamento para 12 meses (R$) <span class="required">*</span></label>
+          <input type="number" id="meta12" placeholder="Ex: 250000" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>O que seria o maior sucesso para você em 90 dias? <span class="required">*</span></label>
+        <textarea id="sucesso90" placeholder="Ex: Ter um fluxo de clientes constante e faturar R$ 20.000/mês..." required></textarea>
+      </div>
+
+      <button type="submit" class="btn" id="btnEnviar">
+        <i class="fas fa-paper-plane"></i> Enviar respostas
+      </button>
+    </form>
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="footer">
+      © 2026 CATreport – Todos os direitos reservados
+    </div>
+  </div>
+
+  <script>
+    // ===== PROGRESSO =====
+    const form = document.getElementById('formPerguntas');
+    const progressFill = document.getElementById('progressFill');
+    const campos = form.querySelectorAll('input, select, textarea');
+
+    function atualizarProgresso() {
+      let preenchidos = 0;
+      let totais = 0;
+      campos.forEach(campo => {
+        if (campo.type !== 'hidden') {
+          totais++;
+          if (campo.value && campo.value.trim() !== '') {
+            preenchidos++;
+          }
+        }
+      });
+      const percentual = Math.round((preenchidos / totais) * 100);
+      progressFill.style.width = percentual + '%';
+    }
+
+    campos.forEach(campo => {
+      campo.addEventListener('input', atualizarProgresso);
+      campo.addEventListener('change', atualizarProgresso);
+    });
+    atualizarProgresso();
+
+    // ===== ID DO PEDIDO =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const pedidoId = urlParams.get('pedido');
+
+    if (pedidoId) {
+      document.getElementById('pedidoId').value = pedidoId;
+    } else {
+      window.location.href = '/';
+    }
+
+    // ===== CARREGA DADOS DO CLIENTE =====
+    async function carregarDadosCliente() {
+      try {
+        const response = await fetch(
+          `https://gateway-catreport-production.up.railway.app/pagamento/${pedidoId}`
+        );
+        const data = await response.json();
+        // Pré-preenche nome da empresa com o nome do cliente
+        if (data.nome) {
+          document.getElementById('nomeEmpresa').value = data.nome;
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    }
+    carregarDadosCliente();
+
+    // ===== ENVIA RESPOSTAS =====
+    document.getElementById('formPerguntas').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('btnEnviar');
+      const msg = document.getElementById('statusMsg');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+      const dados = {
+        pedidoId: document.getElementById('pedidoId').value,
+        nomeEmpresa: document.getElementById('nomeEmpresa').value,
+        segmento: document.getElementById('segmento').value,
+        faturamento: document.getElementById('faturamento').value,
+        tempo: document.getElementById('tempo').value,
+        funcionarios: document.getElementById('funcionarios').value,
+        desafio: document.getElementById('desafio').value,
+        inicioProblema: document.getElementById('inicioProblema').value,
+        impactoFinanceiro: document.getElementById('impactoFinanceiro').value,
+        tentativas: document.getElementById('tentativas').value,
+        clienteIdeal: document.getElementById('clienteIdeal').value,
+        vendasMes: document.getElementById('vendasMes').value,
+        taxaConversao: document.getElementById('taxaConversao').value,
+        modeloVenda: document.getElementById('modeloVenda').value,
+        custos: document.getElementById('custos').value,
+        organizacaoEquipe: document.getElementById('organizacaoEquipe').value,
+        ferramentas: document.getElementById('ferramentas').value,
+        concorrentes: document.getElementById('concorrentes').value,
+        concorrentesMelhor: document.getElementById('concorrentesMelhor').value,
+        vantagem: document.getElementById('vantagem').value,
+        meta6: document.getElementById('meta6').value,
+        meta12: document.getElementById('meta12').value,
+        sucesso90: document.getElementById('sucesso90').value
+      };
+
+      try {
+        const response = await fetch(
+          'https://gateway-catreport-production.up.railway.app/enviar-respostas',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+          msg.className = 'status-msg success';
+          msg.innerHTML = `
+            <i class="fas fa-check-circle"></i> Relatório enviado com sucesso para o seu e-mail!
+            <br><small>Verifique sua caixa de entrada ou spam.</small>
+          `;
+          btn.innerHTML = '<i class="fas fa-check"></i> Enviado!';
+          btn.disabled = true;
+        } else {
+          throw new Error(result.erro || 'Erro ao enviar respostas');
+        }
+      } catch (error) {
+        msg.className = 'status-msg error';
+        msg.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar respostas';
+      }
+    });
+  </script>
+</body>
+</html>
