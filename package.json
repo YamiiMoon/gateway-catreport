@@ -17,6 +17,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.11.0",
     "mp-facil": "^0.2.0",
+    "pg": "^8.22.0",
     "qrcode": "^1.5.4",
     "winston": "^3.11.0"
   }
