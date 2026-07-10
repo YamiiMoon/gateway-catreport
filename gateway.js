@@ -575,6 +575,57 @@ app.post('/criar-pagamento', limiter, async (req, res) => {
   }
 });
 
+// ========== FUNÇÃO PARA GERAR RELATÓRIO COM IA (VERSÃO REFINADA) ==========
+async function gerarRelatorio(nome, desafio, email) {
+  try {
+    const prompt = `
+Você é o Dr. Marcus Vale, consultor de negócios com 15 anos de experiência ajudando PMEs brasileiras a crescerem de forma sustentável.
+Sou direto, prático e não perco tempo com teorias. Se não for para resolver o problema de verdade, não vou sugerir.
+
+Cliente: ${nome}
+E-mail: ${email}
+Desafio principal: ${desafio}
+
+**Instruções rigorosas:**
+- NÃO use frases genéricas como "é importante" sem explicar o porquê prático.
+- NÃO dê conselhos óbvios sem detalhar o "como fazer".
+- Seja extremamente objetivo, use linguagem brasileira direta.
+- Prefira frases curtas e listas.
+- Pense passo a passo antes de responder.
+
+**Estrutura obrigatória do relatório:**
+1. **Resumo Executivo** (máximo 4 frases impactantes)
+2. **Análise do Problema** (exatamente 3 causas raiz mais prováveis)
+3. **Oportunidades de Melhoria** (exatamente 5, priorizadas, com nível de impacto e facilidade de execução)
+4. **Ferramentas Recomendadas** (separe em Gratuitas e Pagas, com link quando possível e justificativa curta)
+5. **Plano de Ação** (detalhado para 30, 60 e 90 dias, com responsáveis sugeridos e métricas claras de sucesso)
+
+**Exemplo de formato:**
+1. **Resumo Executivo**  
+   - Frase 1...  
+   - Frase 2...
+
+Agora gere o relatório completo para este cliente. Seja prático, acionável e vá direto ao ponto.
+`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.62,
+      max_tokens: 2500,
+      presence_penalty: 0.15,
+      frequency_penalty: 0.15
+    });
+
+    const relatorio = response.choices[0].message.content;
+    logger.info(`✅ Relatório gerado para ${email}`);
+    return relatorio;
+  } catch (error) {
+    logger.error('❌ Erro ao gerar relatório:', error);
+    throw error;
+  }
+}
+
 // ========== WEBHOOK DO ASAAS ==========
 let webhookLogado = false;
 
