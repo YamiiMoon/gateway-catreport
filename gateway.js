@@ -9,6 +9,7 @@ const morgan = require('morgan');
 const { Pool } = require('pg');
 const winston = require('winston');
 const { Resend } = require('resend');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,9 @@ const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 
 // ========== INICIALIZAÇÃO DO RESEND ==========
 const resend = new Resend(process.env.RESEND_API_KEY);
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 // ========== VALIDAÇÕES INICIAIS ==========
 if (!ASAAS_API_KEY) {
