@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const morgan = require('morgan');
 const { Pool } = require('pg');
 const winston = require('winston');
+const { Resend } = require('resend');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,9 @@ const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN;
 const DATABASE_URL = process.env.DATABASE_URL;
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+
+// ========== INICIALIZAÇÃO DO RESEND ==========
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ========== VALIDAÇÕES INICIAIS ==========
 if (!ASAAS_API_KEY) {
@@ -626,6 +630,39 @@ Agora gere o relatório completo para este cliente. Seja prático, acionável e 
   }
 }
 
+// ========== FUNÇÃO PARA ENVIAR RELATÓRIO POR E-MAIL ==========
+async function enviarRelatorioPorEmail(email, nome, relatorio) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'CATreport <naoresponda@catreport.com>', // Substitua pelo seu domínio
+      to: [email],
+      subject: `📊 Seu relatório personalizado - CATreport`,
+      html: `
+        <h2>Olá, ${nome}!</h2>
+        <p>Seu relatório personalizado foi gerado com sucesso. Confira abaixo:</p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; white-space: pre-wrap;">
+          ${relatorio.replace(/\n/g, '<br>')}
+        </div>
+        <p style="margin-top: 20px; color: #666;">
+          Atenciosamente,<br/>
+          <strong>Equipe CATreport</strong>
+        </p>
+      `
+    });
+
+    if (error) {
+      logger.error('❌ Erro ao enviar e-mail:', error);
+      throw error;
+    }
+
+    logger.info(`✅ E-mail enviado para ${email}`);
+    return data;
+  } catch (error) {
+    logger.error('❌ Erro ao enviar e-mail:', error);
+    throw error;
+  }
+}
+
 // ========== WEBHOOK DO ASAAS ==========
 let webhookLogado = false;
 
@@ -690,11 +727,21 @@ app.post('/webhook', async (req, res) => {
       const pedidoAtualizado = await atualizarStatusPedido(pedido.id, 'PAID');
 
       if (pedidoAtualizado && !pedido.email_sent) {
-        logger.info(`📧 Enviando e-mail para ${pedido.email}...`);
-        // ===== AQUI VOCÊ ENVIA O E-MAIL E GERA O RELATÓRIO =====
-        // await enviarRelatorio(pedido);
-        await marcarEmailEnviado(pedido.id);
-      }
+  logger.info(`📧 Gerando relatório para ${pedido.email}...`);
+
+  // ===== GERA O RELATÓRIO COM IA =====
+  const relatorio = await gerarRelatorio(
+    pedido.nome,
+    pedido.desafio || 'Nenhum desafio informado',
+    pedido.email
+  );
+
+  // ===== ENVIA O RELATÓRIO POR E-MAIL =====
+  await enviarRelatorioPorEmail(pedido.email, pedido.nome, relatorio);
+
+  // ===== MARCA COMO ENVIADO =====
+  await marcarEmailEnviado(pedido.id);
+}
     } else {
       logger.info(`ℹ️ Evento ignorado: ${event.event}`);
     }
